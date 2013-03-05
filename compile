@@ -1,0 +1,9 @@
+#!/bin/bash
+SRC="$1.c"
+EXEC="$1"
+echo "Compiling..."
+gcc -std=c99 -o ${EXEC} ${SRC}
+echo "DONE"
+echo "Running..."
+time "./${EXEC}"
+echo "DONE"
