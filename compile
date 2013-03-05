@@ -2,8 +2,5 @@
 SRC="$1.c"
 EXEC="$1"
 echo "Compiling..."
-gcc -std=c99 -o ${EXEC} ${SRC}
-echo "DONE"
-echo "Running..."
+gcc -std=c99 -o ${EXEC} ${SRC} && echo "DONE" || exit -1
 time "./${EXEC}"
-echo "DONE"
