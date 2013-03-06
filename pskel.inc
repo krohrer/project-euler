@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 #include <math.h>
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -15,6 +16,12 @@ void print_num(const char *name, num i) {
 }
 
 void calculate_solution(void);
+
+void die(const char *msg) {
+     fprintf(stderr, "Fatal error: %s\n", msg);
+     fflush(stderr);
+     exit(-1);
+}
 
 int main(int argc, const char *argv[]) {
   calculate_solution();
