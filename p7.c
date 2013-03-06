@@ -1,19 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <math.h>
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
+#include "pskel.inc"
 
-typedef int64_t num;
-
-#define NUM(v) INT64_C(v)
-
-void print_num(const char *name, num i) {
-  printf("%s = %" PRIi64 "\n", name, i);
-}
-
-int main(int argc, const char *argv[]) {
+void calculate_solution(void) {
   num N = 10001;
 
   {
@@ -42,6 +29,4 @@ int main(int argc, const char *argv[]) {
 
     free(P);
   }
-
-  return 0;
 }

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
