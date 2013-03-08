@@ -8,6 +8,7 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <limits.h>
+#include <assert.h>
 
 typedef int64_t num;
 
