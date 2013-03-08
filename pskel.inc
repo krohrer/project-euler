@@ -7,6 +7,7 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <stdarg.h>
+#include <limits.h>
 
 typedef int64_t num;
 
