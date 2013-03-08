@@ -1,7 +1,7 @@
 #include "pskel.inc"
 
 #define FRAG_DIGITS	9
-#define FRAG_FORMAT	"%09d"
+#define FRAG_FORMAT	"%09u"
 #define FRAG_CUTOFF	(1000*1000*1000)
 #define FRAG_MAX	(FRAG_CUTOFF-1)
 
@@ -106,22 +106,16 @@ size_t bignat_asprint(bignat *x, char **buff) {
 
   if (x->size > 0) {
     frag_t *f = x->fragments + x->size - 1;
-    printf(s, "%u", *f);
-    fflush(stdout);
     count += sprintf(s, "%u", *f);
     for (unsigned i = 0; i < x->size - 1; ++i) {
       --f;
-      printf(FRAG_FORMAT, *f);
-      fflush(stdout);
-      count += sprintf(FRAG_FORMAT, s + count, *f);
+      count += sprintf(s + count, FRAG_FORMAT, *f);
     }
   }
   else {
     s[count++] = '0';
   }
-
-  // Terminating zero
-  s[count++] = '\0';
+  s[count] = '\0';
 
   return count;
 }
@@ -134,7 +128,7 @@ void bignat_print(bignat *x) {
 }
 
 void bignat_dump(bignat *x) {
-  printf("bignat(");
+  printf("bignat(%d, ", x->size);
   frag_t *f = x->fragments + x->size - 1;
   for (unsigned i = 0; i < x->size; ++i, --f) {
     if (i == 0) {
@@ -152,7 +146,7 @@ void bignat_zero(bignat *x) {
   x->size = 0;
 }
 
-bignat *bignat_add(bignat *dest, bignat *x, bignat *y) {
+void bignat_add(bignat *dest, bignat *x, bignat *y) {
   assert(dest != x && dest != y);
   unsigned maxsize = x->size > y->size ? x->size : y->size;
   bignat_reset(dest, maxsize);
@@ -162,6 +156,11 @@ bignat *bignat_add(bignat *dest, bignat *x, bignat *y) {
   }
 
   bignat_normalize(dest);
+}
+
+void bignat_mult(bignat *dest, bignat *x, bignat *y) {
+  assert(dest != x && dest != y);
+  assert(false);
 }
 
 void calculate_solution(void) {
@@ -176,11 +175,11 @@ void calculate_solution(void) {
   bignat_set_frag(y, 0, FRAG_MAX);
   bignat_normalize(y);
 
-  bignat_dump(x);
-  bignat_dump(y);
+  bignat_print(x);
+  bignat_print(y);
   bignat *r = bignat_new(0);
   bignat_add(r, x, y);
-  bignat_dump(r);
+  bignat_print(r);
 
   bignat_delete(r);
   bignat_delete(y);
