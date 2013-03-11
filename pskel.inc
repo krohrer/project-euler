@@ -159,21 +159,19 @@ typedef struct {
 } pfactors;
 
 void pfactors_init(pfactors *F, unsigned i, psieve *S) {
-  unsigned sqrt_i = (unsigned)sqrt((double)i) + 1;
-
   F->i = i;
   F->count = 0;
   F->is_prime = psieve_contains(S, i);
-  F->V = malloc(sizeof(uint8_t) * sqrt_i);
+  F->V = malloc(sizeof(uint8_t) * S->count);
 
   int k;
-  for (k = 0; k < sqrt_i; ++k) {
+  for (k = 0; k < S->count; ++k) {
     unsigned p = psieve_prime_at_index(S, k);
     unsigned d = i;
     /* If a natural number i is not prime itself, it cannot have a
-       prime factor greater than sqrt(i) */
-    if (sqrt_i < p) break;
-
+       prime factor greater than i/2 */
+    if (i*2 < p) break;
+    
     /* Calculate exponent for prime p */
     F->V[k] = 0;
     while (d % p == 0) {
