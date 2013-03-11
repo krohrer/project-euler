@@ -1,6 +1,3 @@
-#use "topfind";;
-#require "num";;
-
 open Num
 open Printf
 

@@ -1,2 +1,5 @@
 *~
 *.out
+_build/
+*.native
+*.byte
