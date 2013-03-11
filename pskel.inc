@@ -47,7 +47,9 @@ FILE *fopen_or_die(const char *filename) {
   return f;
 }
 
-/* Prime number sieve ------------------------------------------------------*/
+//////////////////////////////////////////////////////////////////////////////
+// Prime number sieve
+//////////////////////////////////////////////////////////////////////////////
 
 typedef struct {
   unsigned count;
@@ -145,7 +147,9 @@ unsigned psieve_prime_at_index(psieve *S, unsigned idx) {
   return S->P[idx];
 }
 
-/* Prime factors -----------------------------------------------------------*/
+//////////////////////////////////////////////////////////////////////////////
+// Prime factors
+//////////////////////////////////////////////////////////////////////////////
 
 typedef struct {
   unsigned i;
@@ -198,4 +202,284 @@ void pfactors_dump(pfactors *F, psieve *S) {
 
 void pfactors_destroy(pfactors *F) {
   free(F->V);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Big natural numbers
+//////////////////////////////////////////////////////////////////////////////
+
+#define FRAG_DIGITS	9
+#define FRAG_FORMAT	"%09u"
+#define FRAG_CUTOFF	(1000*1000*1000)
+#define FRAG_MAX	(FRAG_CUTOFF-1)
+
+typedef uint32_t frag_t;
+
+typedef struct bignat_s {
+  unsigned size;
+  unsigned capacity;
+  frag_t *fragments;
+} bignat_t;
+
+void frag_mult(frag_t x, frag_t y, frag_t *lo, frag_t *hi);
+
+// Lifecycle
+
+bignat_t* bignat_new(unsigned cap);
+bignat_t* bignat_copy(bignat_t *x);
+bignat_t* bignat_reset(bignat_t *x, unsigned cap);
+
+void bignat_delete(bignat_t *x);
+
+// Building blocks
+
+void bignat_swap(bignat_t *x, bignat_t *y);
+
+bignat_t* bignat_set_zero(bignat_t *x);
+bignat_t* bignat_set_unsigned(bignat_t *x, unsigned i);
+bignat_t* bignat_set_frag(bignat_t *x, unsigned idx, frag_t frag);
+
+frag_t bignat_get_frag(bignat_t *x, unsigned idx);
+
+bignat_t* bignat_normalize(bignat_t *x);
+
+// Printing
+
+size_t bignat_asprint(bignat_t *x, char **buff);
+void bignat_print(bignat_t *x);
+bignat_t* bignat_dump(bignat_t *x);
+
+void bignat_add_frag_un(bignat_t *dest, frag_t f, unsigned offs);
+void bignat_madd_frag_un(bignat_t *dest, bignat_t *x, frag_t f, unsigned offs);
+
+// Arith
+
+bignat_t* bignat_add(bignat_t *dest, bignat_t *x, bignat_t *y);
+bignat_t* bignat_mult(bignat_t *dest, bignat_t *x, bignat_t *y);
+
+// Digits
+
+unsigned bignat_count_digits(bignat_t *x);
+unsigned bignat_get_digit(bignat_t *x, unsigned idx);
+
+////////////////////////////////////////
+
+void frag_mult(frag_t x, frag_t y, frag_t *lo, frag_t *hi) {
+  uint64_t product = (uint64_t)x * (uint64_t)y;
+  *lo = product % FRAG_CUTOFF;
+  *hi = product / FRAG_CUTOFF;
+}
+
+////////////////////////////////////////
+
+bignat_t* bignat_new(unsigned cap) {
+  bignat_t *x = malloc(sizeof(bignat_t));
+  x->size = 0;
+  x->capacity = cap > 0 ? cap : 2;
+  x->fragments = malloc(sizeof(frag_t) * x->capacity);
+  return x;
+}
+
+bignat_t* bignat_reset(bignat_t *x, unsigned cap) {
+  x->size = 0;
+  if (cap > x->capacity) {
+    x->capacity = cap;
+    free(x->fragments);
+    x->fragments = malloc(sizeof(frag_t) * x->capacity);
+  }
+  return x;
+}
+
+void bignat_delete(bignat_t *x) {
+  free(x->fragments);
+  free(x);
+}
+
+frag_t bignat_get_frag(bignat_t *x, unsigned idx) {
+  return idx < x->size ? x->fragments[idx] : 0;
+}
+
+bignat_t* bignat_set_frag(bignat_t *x, unsigned idx, frag_t frag) {
+  if (idx < x->size) {
+    x->fragments[idx] = frag;
+  }
+  else if (frag > 0) {
+    // Zero new fragments
+    unsigned oldsize = x->size;
+    x->size = idx + 1;
+    unsigned cap = 2*x->capacity;
+    if (x->size > cap) cap = x->size;
+    x->capacity = cap;
+    x->fragments = realloc(x->fragments, sizeof(frag_t) * x->capacity);
+
+    memset(x->fragments + oldsize, 0, (idx - oldsize)*sizeof(frag_t));
+    x->fragments[idx] = frag;
+  }
+  else {
+    // Do nothing, as fragments out of range are zero anyway.
+  }
+  return x;
+}
+
+bignat_t* bignat_set_unsigned(bignat_t *x, unsigned n) {
+  x->size = 0;
+  bignat_set_frag(x, 0, n);
+  bignat_normalize(x);
+  return x;
+}
+
+void bignat_add_frag_un(bignat_t *dest, frag_t f, unsigned offs) {
+  frag_t d = bignat_get_frag(dest, offs);
+  bignat_set_frag(dest, offs, d + f);
+}
+
+void bignat_madd_frag_un(bignat_t *dest, bignat_t *x, frag_t f, unsigned offs) {
+  for (unsigned idx = 0; idx < x->size; ++idx) {
+    frag_t dlo;
+    frag_t dhi;
+    frag_t xf = bignat_get_frag(x, idx);
+    frag_mult(bignat_get_frag(x, idx), f, &dlo, &dhi);
+    //printf(FRAG_FORMAT"*"FRAG_FORMAT" = "FRAG_FORMAT" "FRAG_FORMAT"\n", xf, f, dhi, dlo);
+    bignat_add_frag_un(dest, dlo, idx+offs);
+    bignat_add_frag_un(dest, dhi, idx+offs+1);
+  }
+}
+
+bignat_t* bignat_normalize(bignat_t *x) {
+  frag_t *f;
+
+  // Normalize each fragment
+  f = x->fragments;
+  unsigned size = x->size;
+  for (unsigned i = 0; i < size; ++i, ++f) {
+    if (*f > FRAG_MAX) {
+      frag_t high = *f / FRAG_CUTOFF;
+      *f %= FRAG_CUTOFF;
+      bignat_set_frag(x, i + 1, bignat_get_frag(x, i + 1) + high);
+    }
+  }
+
+  // Cull leading zeros (for printing)
+  f = x->fragments + x->size - 1;
+  unsigned leading_zeros = 0;
+  for (unsigned i = 0; i < x->size; ++i, --f) {
+    if (*f != 0) break;
+    ++leading_zeros;
+  }
+  x->size -= leading_zeros;
+  return x;
+}
+
+bignat_t* bignat_copy(bignat_t *x) {
+  bignat_t *c = bignat_new(x->size);
+  c->size = x->size;
+  memcpy(c->fragments, x->fragments, sizeof(frag_t) * x->size);
+  return c;
+}
+
+size_t bignat_asprint(bignat_t *x, char **buff) {
+  bignat_normalize(x);
+  size_t size = (FRAG_DIGITS * x->size + 2) * sizeof(char);
+  size_t count = 0;
+
+  *buff = malloc(size);
+  char *s = *buff;
+
+  if (x->size > 0) {
+    frag_t *f = x->fragments + x->size - 1;
+    count += sprintf(s, "%u", *f);
+    for (unsigned i = 0; i < x->size - 1; ++i) {
+      --f;
+      count += sprintf(s + count, FRAG_FORMAT, *f);
+    }
+  }
+  else {
+    s[count++] = '0';
+  }
+  s[count] = '\0';
+
+  return count;
+}
+
+void bignat_print(bignat_t *x) {
+  char *str = NULL;
+  bignat_asprint(x, &str);
+  puts(str);
+  free(str);
+}
+
+bignat_t* bignat_dump(bignat_t *x) {
+  printf("bignat_t(%d, ", x->size);
+  frag_t *f = x->fragments + x->size - 1;
+  for (unsigned i = 0; i < x->size; ++i, --f) {
+    if (i == 0) {
+      printf("%u", *f);
+    }
+    else {
+      printf(" ");
+      printf(FRAG_FORMAT, *f);
+    }
+  }
+  puts(")");
+  return x;
+}
+
+bignat_t* bignat_add(bignat_t *dest, bignat_t *x, bignat_t *y) {
+  assert(dest != x && dest != y);
+  unsigned maxsize = x->size > y->size ? x->size : y->size;
+  bignat_reset(dest, maxsize);
+
+  for (unsigned i = 0; i < maxsize; ++i) {
+    bignat_set_frag(dest, i, bignat_get_frag(x, i) + bignat_get_frag(y, i));
+  }
+
+  bignat_normalize(dest);
+  return dest;
+}
+
+bignat_t* bignat_mult(bignat_t *dest, bignat_t *x, bignat_t *y) {
+  assert(dest != x && dest != y);
+
+  bignat_reset(dest, x->size * y->size + 1);
+
+  for (unsigned idx = 0; idx < x->size; ++idx) {
+    bignat_madd_frag_un(dest, y, bignat_get_frag(x, idx), idx);
+    bignat_normalize(dest);
+  }
+  return dest;
+}
+
+unsigned bignat_count_digits(bignat_t *x) {
+  bignat_normalize(x);
+  if (x->size > 0) {
+    unsigned count = (x->size - 1) * FRAG_DIGITS;
+    frag_t msf = bignat_get_frag(x, x->size-1);
+    while (msf > 0) {
+      ++count;
+      msf /= 10;
+    }
+    return count;
+  }
+  else {
+    return 1;
+  }
+}
+
+unsigned bignat_get_digit(bignat_t *x, unsigned idx) {
+  bignat_normalize(x);
+  unsigned fi = idx / FRAG_DIGITS;
+  unsigned di = idx % FRAG_DIGITS;
+  frag_t f = bignat_get_frag(x, fi);
+  while (di > 0) {
+    f /= 10;
+    --di;
+  }
+  return f % 10;
+}
+
+void bignat_swap(bignat_t *x, bignat_t *y) {
+  bignat_t t;
+  memcpy(&t, x, sizeof(bignat_t));
+  memcpy(x,  y, sizeof(bignat_t));
+  memcpy(y, &t, sizeof(bignat_t));
 }
