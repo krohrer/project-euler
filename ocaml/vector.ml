@@ -35,3 +35,10 @@ let set v i e =
 
 let to_array v =
   Array.init v.count (fun i -> Obj.obj v.data.(i))
+
+let to_list v =
+  let l = ref [] in
+  for i = v.count - 1 downto 0 do
+    l := get v i :: !l
+  done;
+  !l

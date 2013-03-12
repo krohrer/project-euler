@@ -1,0 +1,3 @@
+#!/bin/bash
+TOP=euler.top
+ocamlbuild -use-ocamlfind ${TOP} && ./${TOP} -I _build
