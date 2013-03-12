@@ -14,13 +14,14 @@ open Printf
 let _ =
   let n = 10000-1 in
   let dsums = Array.create n 1 in
+  dsums.(0) <- 0;
   for i = 2 to n do
     for k = 2 to n/i do
       dsums.(k*i-1) <- dsums.(k*i-1) + i
     done
   done;
   let sum = ref 0 in
-  for i = 1 to n do
+  for i = 2 to n do
     let d = dsums.(i-1) in
     if d <= n && dsums.(d-1) = i && d < i then begin
       sum := !sum + d + i
