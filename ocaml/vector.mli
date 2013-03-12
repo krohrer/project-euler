@@ -9,3 +9,5 @@ val insert_last : 'a t -> 'a -> unit
 
 val get : 'a t -> int -> 'a
 val set : 'a t -> int -> 'a -> unit
+
+val to_array : 'a t -> 'a array
