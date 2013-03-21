@@ -1,1 +1,1 @@
-<*.{byte,native}>: package(num)
+<*.{byte,native,top}>: package(num)
