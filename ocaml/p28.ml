@@ -1,6 +1,7 @@
 open Printf
 
 let _ = 
+  (* Too lazy to find closed form, but it should be quite easy. *)
   let rec loop ?(sum=0) = function
     | 0 -> sum
     | 1 -> 1 + sum
