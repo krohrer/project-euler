@@ -17,3 +17,11 @@ let rec pow n = function
     let p = pow n (e/2) in
     p * p
   | e -> n * pow n (e-1)
+
+let fac n =
+  let rec loop p = function
+    | i when i > 0 ->
+      loop (p*i) (i-1)
+    | _ -> p
+  in
+  loop 1 n
