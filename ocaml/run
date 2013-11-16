@@ -1,7 +1,0 @@
-#!/bin/bash
-EXEC="$1.native"
-echo "Compiling..."
-ocamlbuild -use-ocamlfind ${EXEC} || exit -1
-echo "DONE"
-echo "Executing now."
-time "./${EXEC}"

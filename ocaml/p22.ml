@@ -3,7 +3,7 @@ open Scanf
 
 let _ = 
   let names = 
-    let fin = Scanning.open_in "names.txt" in
+    let fin = Scanning.open_in "../data/p22.txt" in
     let vec = Vector.make () in
     let rec read_all () =
       try
