@@ -1,20 +1,25 @@
-.PHONY: default all top clean clobber
+.PHONY: default all runtop clean clobber
 
 OCAMLBUILD=ocamlbuild -use-ocamlfind
-TOP=euler
+NAME=euler
+TOP=$(NAME).top
 ALL=$(shell ls p[0-9]*.ml)
 
-default: $(ALL:.ml=.native)
+default: $(TOP)
+
+all: $(ALL:.ml=.native)
 
 %.native: %.ml
+	$(OCAMLBUILD) $@
+
+%.top: *.ml
 	$(OCAMLBUILD) $@
 
 %: %.native
 	./$<
 
-top:
-	$(OCAMLBUILD) $(TOP).top
-	./$(TOP).top -I _build
+runtop: $(TOP)
+	./$(TOP) -I _build
 
 clean:
 	$(OCAMLBUILD) -clean
