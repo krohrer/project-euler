@@ -25,3 +25,13 @@ let fac n =
     | _ -> p
   in
   loop 1 n
+
+let rec digits_fold ?(base=10) f z n = 
+  assert (0 < base);
+  assert (0 <= n);
+  let d = n mod base and n = n / base in
+  let z = f z d in
+  if 0 < n then
+    digits_fold ~base f z n
+  else
+    z

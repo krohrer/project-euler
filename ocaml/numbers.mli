@@ -6,3 +6,5 @@ val pow : int -> int -> int
 
 (* factorial for small numbers *)
 val fac : int -> int
+
+val digits_fold : ?base:int -> ('a -> int -> 'a) -> 'a -> int -> 'a
