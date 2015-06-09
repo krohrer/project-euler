@@ -22,7 +22,7 @@ let make n =
       for k = 2 to n/i do
 	B.set sieve (k*i-2) false
       done;
-      V.insert_last primes i
+      V.push_back primes i
     )
   done;
   {
@@ -48,7 +48,7 @@ let grow sieve i =
 	for k = 2 to n_new/i do
 	  B.set sieve.sieve (k*i-2) false
 	done;
-	V.insert_last sieve.primes i
+	V.push_back sieve.primes i
       )
     done;
     sieve.ceiling <- n_new

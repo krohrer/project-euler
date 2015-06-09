@@ -31,7 +31,7 @@ let _ =
 
   ds.(0) <- 0;
   for i = 2 to n do
-    if is_abundant i then V.insert_last vas i;
+    if is_abundant i then V.push_back vas i;
     for k = 2 to n/i do
       ds.(k*i-1) <- ds.(k*i-1) + i
     done

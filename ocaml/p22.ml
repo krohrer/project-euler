@@ -7,7 +7,7 @@ let _ =
     let vec = Vector.make () in
     let rec read_all () =
       try
-	bscanf fin "%S" (Vector.insert_last vec);
+	bscanf fin "%S" (Vector.push_back vec);
 	bscanf fin "," ();
 	read_all ()
       with End_of_file -> ()
